@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
-import { User } from "../models/userModel.js";
 import { Admin } from "../models/adminModel.js";
+
 
 export const createAdmin = async(req , res)=>{
     try {
@@ -25,7 +25,8 @@ export const createAdmin = async(req , res)=>{
             adminName,
             email,
             pumpAddress,
-            password : hashedPassword
+            password : hashedPassword,
+            role : "admin"
         })
 
         return res.status(201).json({
