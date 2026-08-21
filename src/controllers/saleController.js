@@ -13,7 +13,7 @@ export const createSale = async (req, res) => {
             return res.status(400).json({ message: "cng volume must be greater than 0" })
         }
         if (Number(amount) <= 0) {
-            return res.status(400).json({ message: "cng voulme bust be fucing" })
+            return res.status(400).json({ message: "amount must be greater than 0" })
         }
 
 
