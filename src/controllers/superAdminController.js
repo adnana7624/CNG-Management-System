@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { User } from "../models/userModel.js";
+import { SuperAdmin } from "../models/superAdminModel.js";
 import jwt from "jsonwebtoken";
 
 export const loginSuperAdmin = async(req , res)=>{
@@ -15,7 +15,7 @@ export const loginSuperAdmin = async(req , res)=>{
         }
 
         // find super admin
-        const superAdmin = await User.findOne({
+        const superAdmin = await SuperAdmin.findOne({
             email : email.toLowerCase(),
             role : "SuperAdmin"
         })
