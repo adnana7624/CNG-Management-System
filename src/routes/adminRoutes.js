@@ -1,6 +1,6 @@
 import express from "express";
 import { auth } from "../middleware/authMiddleware.js";
-import { createAdmin, getAllAdmins, getSingleAdmin, updateAdmin } from "../controllers/createAdminController.js";
+import { createAdmin, deleteAdmin, getAllAdmins, getSingleAdmin, updateAdmin } from "../controllers/createAdminController.js";
 
 
 const adminRoutes = express.Router();
@@ -20,6 +20,10 @@ adminRoutes.get("/getSingleAdmin/:id",auth,getSingleAdmin);
 // update admins api
 
 adminRoutes.put("/updateAdmin/:id",auth , updateAdmin)
+
+// delte admin api
+
+adminRoutes.delete("/deleteAdmin/:id",auth,deleteAdmin);
 
 
 
