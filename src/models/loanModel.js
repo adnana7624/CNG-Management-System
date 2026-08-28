@@ -1,5 +1,41 @@
 import mongoose from "mongoose";
 
+
+const loanTransactionSchema = new mongoose.Schema({
+    date: {
+        type: Date,
+        required: true,
+        },
+
+    loanType: {
+        type: String,
+        enum: ["loan_given", "loan_received"],
+        required: true,
+        },
+
+    amount: {
+        type: Number,
+        required: true,
+        min: 0,
+        },
+
+    paymentType: {
+        type: String,
+        enum: ["cash", "bank transfer"],
+        required: true,
+        },
+
+    remarks: {
+        type: String,
+        trim: true,
+        default: "",
+        },
+    },
+    {
+        _id: false,
+    }
+);
+
 const loanschema = new mongoose.Schema({
     admin : {
         type : mongoose.Schema.Types.ObjectId,
@@ -40,10 +76,9 @@ const loanschema = new mongoose.Schema({
         required : true,
         min : 0
     },
-    linkedLoan : {
-        type : mongoose.Schema.Types.ObjectId,
-        ref : "Loan",
-        default : null
+    transactions: {
+        type: [loanTransactionSchema],
+        default: [],
     },
     remarks : {
         type : String,
