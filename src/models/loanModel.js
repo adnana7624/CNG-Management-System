@@ -23,13 +23,7 @@ const loanTransactionSchema = new mongoose.Schema({
         type: String,
         enum: ["cash", "bank transfer"],
         required: true,
-        },
-
-    remarks: {
-        type: String,
-        trim: true,
-        default: "",
-        },
+        }
     },
     {
         _id: false,
@@ -79,12 +73,8 @@ const loanschema = new mongoose.Schema({
     transactions: {
         type: [loanTransactionSchema],
         default: [],
-    },
-    remarks : {
-        type : String,
-        required : true,
-        trim : true
     }
+    
 },{timestamps : true})
 
 export const Loan = mongoose.model("Loan",loanschema);
