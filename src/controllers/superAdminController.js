@@ -1,6 +1,8 @@
 import bcrypt from "bcryptjs";
 import { SuperAdmin } from "../models/superAdminModel.js";
 import jwt from "jsonwebtoken";
+import {Admin} from "../models/adminModel.js";
+
 
 export const loginSuperAdmin = async(req , res)=>{
     try {
@@ -51,6 +53,51 @@ export const loginSuperAdmin = async(req , res)=>{
             token : token
         })
         
+    } catch (error) {
+        return res.status(500).json({
+            success : false,
+            message : error.message
+        })
+    }
+}
+
+export const viewAdminDashboard = async(req , res) =>{
+    try {
+        const {id} = req.params;
+
+        const admin = await Admin.findById(id).select("-password");
+        if(!admin){
+            return res.status(404).json({message : "admin not found"})
+        }
+        if(admin.status !== "active"){
+            return res.status(400).json({message : "cannot access inactive admin"})
+        }
+
+        const token = jwt.sign(
+            {
+                id : admin._id,
+                role : "admin",
+                isImpersonation : true,
+                impersonatedBy : req.user.id
+            },
+            process.env.JWT_SECRET,
+            {
+                expiresIn : "15m"
+            }
+        )
+
+        return res.status(200).json({
+            success : true ,
+            message : "admin dashboard access granted",
+            token,
+            admin:{
+                id : admin._id,
+                adminName : admin.adminName,
+                pumpName : admin.pumpName,
+                address : admin.pumpAddress,
+                role : admin.role
+            }
+        })
     } catch (error) {
         return res.status(500).json({
             success : false,
