@@ -11,6 +11,7 @@ import cashBankRoutes from "./src/routes/cashBankRoutes.js";
 import loanRoutes from "./src/routes/loanRoutes.js";
 import inventoryRoutes from "./src/routes/inventoryRoutes.js";
 import profileRoutes from "./src/routes/profileRoutes.js";
+import ledgerRoutes from "./src/routes/ledgerRoutes.js";
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use("/api/v1/cashBank",cashBankRoutes);
 app.use("/api/v1/loans", loanRoutes);
 app.use("/api/v1/inventory", inventoryRoutes);
 app.use("/api/v1/profile",profileRoutes);
+app.use("/api/v1/ledger",ledgerRoutes);
 
 app.get("/",(req ,res)=>{
     // console.log("app runnig succesfuly")

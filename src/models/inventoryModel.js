@@ -24,7 +24,7 @@ const inventorySchema = new mongoose.Schema({
     remarks : {
         type : String,
         trim : true,
-        required : true
+        default : ""
     }
 },{timestamps : true})
 

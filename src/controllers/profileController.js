@@ -28,7 +28,8 @@ export const getAdminProfile = async(req , res) =>{
                 address : admin.pumpAddress,
                 role : admin.role,
                 status : admin.status,
-                joiningDate : joiningDate
+                joiningDate : joiningDate,
+                assignedStation : admin.pumpName
             }
         })
 
