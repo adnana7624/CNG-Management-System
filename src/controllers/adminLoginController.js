@@ -11,7 +11,7 @@ export const adminLogin = async(req , res) =>{
 
         const admin = await Admin.findOne({email})
         if(!admin){
-            return res.status(401).json({message : "admin  not found"})
+            return res.status(401).json({message : "admin not found"})
         }
 
         if(admin.status === "inactive"){

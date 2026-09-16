@@ -1,8 +1,8 @@
 import express from "express";
-import { loginSuperAdmin } from "../controllers/superAdminController.js";
+import { loginSuperAdmin, viewAdminDashboard } from "../controllers/superAdminController.js";
 import {auth} from "../middleware/authMiddleware.js";
 import { createAdmin, getAllAdmins, getSingleAdmin, updateAdmin } from "../controllers/createAdminController.js";
-import { adminLogin } from "../controllers/adminController.js";
+import { adminLogin } from "../controllers/adminLoginController.js";
 
 
 const authRoutes = express.Router();
@@ -15,6 +15,7 @@ authRoutes.post("/superadminlogin",loginSuperAdmin)
 
 authRoutes.post("/adminlogin",adminLogin)
 
+authRoutes.get("/viewAdminDashboard/:id",auth,viewAdminDashboard)
 
 
 export default authRoutes;
