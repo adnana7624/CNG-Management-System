@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
-import {User} from "../models/userModel.js";
+import {SuperAdmin} from "../models/superAdminModel.js";
 import connectDB from "../config/db.js";
 
 dotenv.config();
@@ -12,7 +12,7 @@ const createSuperAdmin = async()=>{
         await connectDB();
 
         // check if superadmin already exist
-        const exitingSuperAdmin = await User.findOne({role:"SuperAdmin"});
+        const exitingSuperAdmin = await SuperAdmin.findOne({role:"SuperAdmin"});
         if(exitingSuperAdmin){
             console.log("superadmin already exist")
             process.exit(0);
@@ -22,7 +22,7 @@ const createSuperAdmin = async()=>{
         const hashpassword = await bcrypt.hash(process.env.SUPERADMIN_PASSWORD,10)
 
         // create super admin
-        const superAdmin = await User.create({
+        const superAdmin = await SuperAdmin.create({
             name : process.env.SUPERADMIN_NAME,
             email : process.env.SUPERADMIN_EMAIL,
             password : hashpassword,

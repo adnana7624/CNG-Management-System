@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const userchema = new mongoose.Schema({
+const superAdminchema = new mongoose.Schema({
     name:{
         type : String,
         required : true,
@@ -23,4 +23,4 @@ const userchema = new mongoose.Schema({
     }
 },{timestamps:true})
 
-export const User = mongoose.model("User",userchema);
+export const SuperAdmin = mongoose.model("SuperAdmin",superAdminchema);

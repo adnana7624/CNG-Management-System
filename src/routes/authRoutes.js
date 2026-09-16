@@ -5,16 +5,16 @@ import { createAdmin, getAllAdmins, getSingleAdmin, updateAdmin } from "../contr
 import { adminLogin } from "../controllers/adminController.js";
 
 
-const router = express.Router();
-router.post("/superadminlogin",loginSuperAdmin)
+const authRoutes = express.Router();
 
-router.post("/createAdmin",auth,createAdmin)
-router.get("/getAllAdmins",auth,getAllAdmins)
-router.get("/getSingleAdmin/:id",auth,getSingleAdmin)
-router.put("/updateAdmin/:id",updateAdmin)
+// super admin login api
+
+authRoutes.post("/superadminlogin",loginSuperAdmin)
 
 // admin login
-router.post("/adminlogin",adminLogin)
+
+authRoutes.post("/adminlogin",adminLogin)
 
 
-export default router;
+
+export default authRoutes;

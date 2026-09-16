@@ -26,6 +26,11 @@ const adminschema = new mongoose.Schema({
         type :String,
         enum : ["active","inactive"],
         default : "active"
+    },
+    role : {
+        type : String,
+        enum : ["admin"],
+        default : "admin"
     }
 }, {timestamps : true})
 
