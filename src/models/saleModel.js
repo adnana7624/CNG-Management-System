@@ -5,12 +5,7 @@ const saleschema = new mongoose.Schema({
         type : mongoose.Schema.Types.ObjectId,
         ref : "Admin"
     },
-    // receiptNo:{
-    //     type : String,
-    //     required : true,
-    //     trim : true,
-    //     unique : true
-    // },
+    
     date : {
         type : Date,
         required : true

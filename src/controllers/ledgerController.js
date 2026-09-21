@@ -1,24 +1,46 @@
 import {Sale} from "../models/saleModel.js";
 import {Loan} from "../models/loanModel.js";
 import {CashBank} from "../models/cashBankModel.js";
-
+import { Expense } from "../models/expenseModel.js";
+import { RecoveryExpense} from "../models/recoveryExpenseModel.js";
+import { DieselExpense } from "../models/dieselExpenseModel.js";
+import { OwnerExpense } from "../models/ownerExpenseModel.js";
+import { ExpenseCategory } from "../models/expenseCategoryModel.js";
+import { Admin } from "../models/adminModel.js";
 
 
 export const getLedger = async(req , res) => {
     try {
+        const admin = await Admin.findById(req.user.id).select("adminName");
+        // console.log("loggedIn Admin : ",admin?.adminName)
+
+        const adminId = req.user.id;
+
         const page = Math.max(Number(req.query.page) || 1 , 1);
 
         const limit = Math.min(Math.max(Number(req.query.limit) || 5 , 1));
 
         const skip = (page -1) * limit;
 
-        const [sales , loans , cashBankTransfers] = await Promise.all([
-            Sale.find().sort({date : -1 , createdAt :-1}).lean(),
-            Loan.find().sort({date : -1 , createdAt : -1}).lean(),
-            CashBank.find().sort({date : -1 , createdAt : -1}).lean(),
-
+        const [
+            sales ,
+            loans ,
+            cashBankTransfers ,
+            expenses ,
+            recoveryExpenses ,
+            dieselExpenses,
+            ownerExpenses
+        ] = await Promise.all([
+            Sale.find({admin : adminId}).sort({date : -1 , createdAt :-1}).lean(),
+            Loan.find({admin : adminId}).sort({date : -1 , createdAt : -1}).lean(),
+            CashBank.find({admin:adminId}).sort({date : -1 , createdAt : -1}).lean(),
+            Expense.find({admin : adminId}).populate("category","name").sort({date : -1 , createdAt : -1}).lean(),
+            RecoveryExpense.find({admin :adminId}).populate("category","name").sort({date : -1 , createdAt : -1}).lean(),
+            DieselExpense.find({admin:adminId}).sort({date : -1 , createdAt : -1}).lean(),
+            OwnerExpense.find({admin : adminId}).sort({date : -1 , createdAt : -1}).lean(),
 
         ]);
+        
         const ledger = [];
 
         // Sales
@@ -41,68 +63,68 @@ export const getLedger = async(req , res) => {
         });
 
         // Normal Expenses
-        // expenses.forEach((expense) =>{
-        //     ledger.push({
-        //         id : expense._id,
-        //         source : "expense",
-        //         date :  expense.date,
-        //         type : "Expense",
-        //         specificHead : expense.category?.name || "",
-        //         details : expense.remarks || "",
-        //         amount : expense.amount,
-        //         paymentPool : expense.paymentMethod,
-        //         volume : null,
-        //         status : expense.status
-        //     })
-        // });
+        expenses.forEach((expense) =>{
+            ledger.push({
+                id : expense._id,
+                source : "expense",
+                date :  expense.date,
+                type : "Expense",
+                specificHead : expense.category?.name || "",
+                details : expense.remarks || "",
+                amount : expense.amount,
+                paymentPool : expense.paymentMode,
+                volume : null,
+                status : expense.status
+            })
+        });
         
         // Recovery Expenses
-        // recoveryExpenses.forEach((expense) =>{
-        //     ledger.push({
-        //         id : expense._id,
-        //         source : "recovery Expense",
-        //         date : expense.date,
-        //         type : "Recovery Expense",
-        //         specificHead : expense.category?.name || "Expense Recovery",
-        //         details : expense.remarks || "Recovered Expense Amount ",
-        //         amount : expense.recoveryAmount,
-        //         paymentPool : expense.paymentMode,
-        //         volume : null,
-        //         status : "completed"
-        //     })
-        // });
+        recoveryExpenses.forEach((expense) =>{
+            ledger.push({
+                id : expense._id,
+                source : "recovery Expense",
+                date : expense.date,
+                type : "Recovery Expense",
+                specificHead : expense.category?.name || "Expense Recovery",
+                details : expense.remarks || "Recovered Expense Amount ",
+                amount : expense.recoveryAmount,
+                paymentPool : expense.paymentMode,
+                volume : null,
+                status : "completed"
+            })
+        });
 
-        // // Diesel Expenses
-        // dieselExpenses.forEach((expense) =>{
-        //     ledger.push({
-        //         id : expense._id,
-        //         source : "diesel expense",
-        //         date : expense.date,
-        //         type : "Expense",
-        //         specificHead : "Diesel Purchased",
-        //         details : expense.remarks || "Diesel Purchase",
-        //         paymentPool : "Cash Acount Hand Pool",
-        //         volume : null ,
-        //         dieselQuantity : expense.dieselQuantity,
-        //         status : "completed"
-        //     })
-        // });
+        // Diesel Expenses
+        dieselExpenses.forEach((expense) =>{
+            ledger.push({
+                id : expense._id,
+                source : "diesel expense",
+                date : expense.date,
+                type : "Expense",
+                specificHead : "Diesel Purchased",
+                details : expense.remarks || "Diesel Purchase",
+                paymentPool : "Cash Acount Hand Pool",
+                volume : null ,
+                dieselQuantity : expense.dieselQuantity,
+                status : "completed"
+            })
+        });
 
-        // // Owner Expense
-        // ownerExpenses.forEach((expense) =>{
-        //     ledger.push({
-        //         id : expense._id,
-        //         source : "owner_expense",
-        //         date : expense.date,
-        //         type : "Expense",
-        //         specificHead : "Owner Expense",
-        //         details : expense.remarks || "owner WithDrawl",
-        //         amount : expense.amount,
-        //         paymentPool : expense.paymentMode,
-        //         volume : null,
-        //         status : expense.status || ""
-        //     })
-        // });
+        // Owner Expense
+        ownerExpenses.forEach((expense) =>{
+            ledger.push({
+                id : expense._id,
+                source : "owner_expense",
+                date : expense.date,
+                type : "Expense",
+                specificHead : "Owner Expense",
+                details : expense.remarks || "owner WithDrawl",
+                amount : expense.amount,
+                paymentPool : expense.paymentMode,
+                volume : null,
+                status : expense.status || ""
+            })
+        });
 
         // Loans
         loans.forEach((loan) =>{
@@ -173,9 +195,11 @@ export const getLedger = async(req , res) => {
             skip+limit
         );
 
-            
         return res.status(200).json({
             success : true,
+            admin:{
+                name : admin.adminName
+            },
             pagination : {
             page,
             limit,
