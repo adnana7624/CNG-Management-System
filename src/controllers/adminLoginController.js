@@ -37,7 +37,15 @@ export const adminLogin = async(req , res) =>{
         return res.status(200).json({
             success : true,
             message : "admin logedIn successfully",
-            token : token
+            token : token,
+            id : admin._id,
+            email : admin.email,
+            role : admin.role,
+            pump:{
+                id : admin._id,
+                name : admin.pumpName,
+                address : admin.pumpAddress
+            }
         })
     } catch (error) {
         return res.status(500).json({

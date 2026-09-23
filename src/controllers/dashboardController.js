@@ -241,7 +241,7 @@ export const getDashboard = async (req , res) =>{
             })
         });
 
-        // diesel 
+        // diesel
         recentDieselExpenses.forEach((diesel) =>{
             recentTransactions.push({
                 id : diesel._id,
