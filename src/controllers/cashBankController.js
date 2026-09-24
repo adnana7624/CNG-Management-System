@@ -1,143 +1,263 @@
 import mongoose from "mongoose";
 import { Sale } from "../models/saleModel.js";
 import { CashBank } from "../models/cashBankModel.js";
-
-export const getCashBank = async (req ,res ) => {
-    try {
-        const adminId = new mongoose.Types.ObjectId(req.user.id);
-
-        // get current month and year
-        const currentDate = new Date();
-
-        const month = Number(currentDate.getMonth() + 1);
-        const year = Number(currentDate.getFullYear());
+import {OpeningBalance} from "..//models/openingBalanceModel.js";
 
 
-        const startDate = new Date(year , month-1,1,0,0,0,0);
-        const endDate = new Date(year , month , 1 , 0,0,0,0);
+// export const getCashBank = async (req ,res ) => {
+//     try {
+//         const adminId = new mongoose.Types.ObjectId(req.user.id);
+
+//         // get current month and year
+//         const currentDate = new Date();
+
+//         const month = Number(currentDate.getMonth() + 1);
+//         const year = Number(currentDate.getFullYear());
 
 
-        // total cash sale
-        const cashSales = await Sale.aggregate([
-            {
-                $match : {
-                    admin : adminId,
-                    status : "completed",
-                    paymentMethod : "cash",
-                    date : {
-                        $gte : startDate,
-                        $lt : endDate
-                    }
-                }
-            },
-            {
-                $group : {
-                    _id : null,
-                    total : {
-                        $sum : "$amount"
-                    }
-                }
-            }
-        ]);
+//         const startDate = new Date(year , month-1,1,0,0,0,0);
+//         const endDate = new Date(year , month , 1 , 0,0,0,0);
 
-        const totalCashSales = cashSales[0]?.total || 0;
 
-        // total bank sale 
+//         // total cash sale
+//         const cashSales = await Sale.aggregate([
+//             {
+//                 $match : {
+//                     admin : adminId,
+//                     status : "completed",
+//                     paymentMethod : "cash",
+//                     date : {
+//                         $gte : startDate,
+//                         $lt : endDate
+//                     }
+//                 }
+//             },
+//             {
+//                 $group : {
+//                     _id : null,
+//                     total : {
+//                         $sum : "$amount"
+//                     }
+//                 }
+//             }
+//         ]);
 
-        const bankSales = await  Sale.aggregate([
-            {
-                $match : {
-                    admin : adminId,
-                    status : "completed",
-                    paymentMethod : "bank transfer",
-                    date : {
-                        $gte : startDate,
-                        $lt : endDate
-                    }
-                }
-            },
-            {
-                $group : {
-                    _id : null,
-                    total : {
-                        $sum : "$amount"
-                    }
-                }
-            }
-        ]);
-        const totalBankSales = bankSales[0]?.total || 0;
+//         const totalCashSales = cashSales[0]?.total || 0;
 
-        // toatl cash bank sank transfer
+//         // total bank sale 
+
+//         const bankSales = await  Sale.aggregate([
+//             {
+//                 $match : {
+//                     admin : adminId,
+//                     status : "completed",
+//                     paymentMethod : "bank transfer",
+//                     date : {
+//                         $gte : startDate,
+//                         $lt : endDate
+//                     }
+//                 }
+//             },
+//             {
+//                 $group : {
+//                     _id : null,
+//                     total : {
+//                         $sum : "$amount"
+//                     }
+//                 }
+//             }
+//         ]);
+//         const totalBankSales = bankSales[0]?.total || 0;
+
+//         // toatl cash bank sank transfer
         
-        const transfers = await CashBank.aggregate([
-            {
-                $match : {
-                    admin : adminId,
-                    date : {
-                        $gte : startDate,
-                        $lt : endDate
-                    }
-                }
-            },
-            {
-                $group : {
-                    _id : "$transferType",
-                    total : {
-                        $sum : "$amount"
-                    }
-                }
-            }
-        ]);
+//         const transfers = await CashBank.aggregate([
+//             {
+//                 $match : {
+//                     admin : adminId,
+//                     date : {
+//                         $gte : startDate,
+//                         $lt : endDate
+//                     }
+//                 }
+//             },
+//             {
+//                 $group : {
+//                     _id : "$transferType",
+//                     total : {
+//                         $sum : "$amount"
+//                     }
+//                 }
+//             }
+//         ]);
 
+//         let cashToBank = 0;
+//         let bankToCash = 0;
+
+//         transfers.forEach((transfer) => {
+//             if(transfer._id === "cash_to_bank"){
+//                 cashToBank = transfer.total
+//             }
+//             if(transfer._id === "bank_to_cash"){
+//                 bankToCash = transfer.total
+//             }
+//         });
+
+//         // calculte  total cash balance
+//         const cashInHand = totalCashSales-cashToBank+bankToCash;
+
+//         // calculate total bank baleance
+//         const bankBalance = totalBankSales+cashToBank-bankToCash;
+
+//         // get transaction history
+
+//         const transactions = await CashBank.find({
+//             admin : adminId,
+//             date : {
+//                 $gte : startDate,
+//                 $lt : endDate
+//             }
+//         }).sort({date : -1 , createdAt : -1}).lean();
+
+//         // format transaction for frontend
+
+//         const formattedTransactions = transactions.map(
+//             (transaction) => ({
+//                 id : transaction._id,
+//                 date : transaction.date,
+
+//                 type : transaction.transferType === "cash_to_bank"?"Cash to Bank" : "Bank to Bank",
+
+//                 transferType : transaction.transferType,
+//                 amount : transaction.amount
+//             })
+//         )
+
+//         return res.status(200).json({
+//             success : true,
+//             balance : {
+//                 cashInHand,
+//                 bankBalance
+//             },
+//             transactions
+//         })
+
+//     } catch (error) {
+//         return res.status(500).json({
+//             success : false,
+//             message : error.message
+//         })
+//     }
+// }
+
+export const getCashBank = async (req , res) => {
+    try {
+        const adminId = req.user.id;
+
+        // selected month
+        const now = new Date();
+
+        const year = Number(req.query.year) || now.getFullYear();
+
+        const month = Number(req.query.month) || now.getMonth() +1;
+
+        if(month < 1 || month > 12){
+            return res.status(400).json({message : "month must between 1 and 12"})
+        }
+
+        const startOfMonth = new Date(year , month -1 , 1);
+        const startOfNextMonth = new Date (year , month , 1);
+
+        // get monthly sale 
+        const sales = await Sale.find({
+            admin : adminId,
+            date : {
+                $gte : startOfMonth,
+                $lt : startOfNextMonth 
+            },
+            status : "completed"
+        }).lean();
+
+        // get monthly cash and bank transger
+        const transfers = await CashBank.find({
+            admin : adminId,
+            date : {
+                $gte : startOfMonth,
+                $lt : startOfNextMonth
+            }
+
+        }).sort({
+                date : -1 ,
+                createdAt : -1
+            }).lean();
+
+        // get opening balance
+        const openingBalances = await OpeningBalance.find({
+            admin : adminId,
+            targetMonth : startOfMonth
+        }).lean();
+
+        const openingCash = openingBalances.find(
+            item => item.balanceType === "cash_in_hand"
+        )?.amount || 0;
+
+        const openingBank = openingBalances.find(
+            item => item.balanceType === "cash_in_bank"
+        )?.amount || 0;
+
+        // calculate sales
+        let cashSales = 0;
+        let bankSales = 0;
+
+        sales.forEach((sale) => {
+            if(sale.paymentMethod === "cash"){
+                cashSales += Number(sale.amount || 0)
+            }
+            if(sale.paymentMethod === "bank transfer"){
+                bankSales += Number(sale.amount || 0)
+            }
+        });
+
+        // calculate transfers
         let cashToBank = 0;
         let bankToCash = 0;
 
         transfers.forEach((transfer) => {
-            if(transfer._id === "cash_to_bank"){
-                cashToBank = transfer.total
+            if(transfer.transferType === "cash_to_bank"){
+                cashToBank += Number(transfer.amount || 0);
             }
-            if(transfer._id === "bank_to_cash"){
-                bankToCash = transfer.total
+            if(transfer.transferType === "bank_to_cash"){
+                bankToCash += Number(transfer.amount || 0)
             }
         });
 
-        // calculte  total cash balance
-        const cashInHand = totalCashSales-cashToBank+bankToCash;
+        // final monthly balance
+        const cashInHand = openingCash + cashSales - cashToBank + bankToCash;
 
-        // calculate total bank baleance
-        const bankBalance = totalBankSales+cashToBank-bankToCash;
-
-        // get transaction history
-
-        const transactions = await CashBank.find({
-            admin : adminId,
-            date : {
-                $gte : startDate,
-                $lt : endDate
-            }
-        }).sort({date : -1 , createdAt : -1}).lean();
-
-        // format transaction for frontend
-
-        const formattedTransactions = transactions.map(
-            (transaction) => ({
-                id : transaction._id,
-                date : transaction.date,
-
-                type : transaction.transferType === "cash_to_bank"?"Cash to Bank" : "Bank to Bank",
-
-                transferType : transaction.transferType,
-                amount : transaction.amount
-            })
-        )
+        const bankBalance = openingBank + bankSales + cashToBank - bankToCash;
+        
 
         return res.status(200).json({
             success : true,
+            month : {
+                year,
+                month
+            },
+            openingBalances : {
+                cashInHand : openingCash,
+                bankBalance : openingBank
+            },
+            activity : {
+                cashSales,
+                bankSales,
+                cashToBank,
+                bankToCash
+            },
             balance : {
                 cashInHand,
                 bankBalance
             },
-            transactions
+            transactions : transfers
         })
 
     } catch (error) {
@@ -147,6 +267,7 @@ export const getCashBank = async (req ,res ) => {
         })
     }
 }
+
 
 export const createCashBankTransfer = async(req,res) =>{
     try {
@@ -348,6 +469,68 @@ export const deleteCashBankTransfer = async(req , res) => {
 
         return res.status(200).json({message : "transaction deleted successfully"});
         
+    } catch (error) {
+        return res.status(500).json({
+            success : false,
+            message : error.message
+        })
+    }
+}
+
+
+
+export const createOpeningBalnce = async(req , res) =>{
+    try {
+        const adminId = req.user.id;
+
+        const {balanceType , targetMonth , date ,amount } = req.body;
+
+        if(!balanceType || !targetMonth || !date || !amount){
+            return res.status(400).json({message : "all field are required"})
+        }
+
+        // calidate amout
+        const numericAmount = Number(amount);
+
+        if(Number.isNaN(numericAmount) || numericAmount < 0){
+            return res.status(400).josn({message : "amount must be a valid number"})
+        }
+
+        
+        const targetMonthDate = new Date(targetMonth);
+        const effectiveDateValue = new Date(date);
+
+        if(Number.isNaN(targetMonthDate.getTime()) || Number.isNaN(effectiveDateValue.getTime())){
+            return res.status(400).json({message : "invalid date"})
+        }
+
+        const normalizeDate = new Date(targetMonthDate.getFullYear(),targetMonthDate.getMonth(),1);
+
+        // check existing balance for this monht
+        const existingBalance = await OpeningBalance.findOne({
+            admin : adminId,
+            targetMonth : normalizeDate,
+            balanceType
+        })
+
+        if(existingBalance){
+            return res.status(400).json({message : "opening balance already exist for this month"})
+        }
+
+        const openingBalance = await OpeningBalance.create({
+            admin : adminId,
+            balanceType,
+            targetMonth : normalizeDate,
+            date,
+            amount : numericAmount
+        })
+
+        return res.status(201).json({
+            success : true,
+            message : "opening balnace add successfully",
+            openingBalance
+        })
+
     } catch (error) {
         return res.status(500).json({
             success : false,
