@@ -37,8 +37,13 @@ const captureSchema = new mongoose.Schema({
     },
     captureType : {
         type : String,
-        enum : ["meter", "nozzel"],
+        enum : ["meter", "nozzle"],
         required : true
+    },
+    nozzleNumber : {
+        type : Number,
+        enum : [1 , 2, 3, 4],
+        default : null
     },
     status : {
         type : String,

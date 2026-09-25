@@ -8,7 +8,7 @@ export const uploadCaptureImage = async(req , res) => {
     try {
         const adminId = req.user.id;
         
-        const {captureType , imageType , captureId } = req.body;
+        const {captureType , imageType , captureId , nozzleNumber} = req.body;
 
         let capture = null;
 
@@ -27,6 +27,19 @@ export const uploadCaptureImage = async(req , res) => {
             return res.status(400).json({message : "capture type must be nozzel or meter"})
         }
 
+        // nozzle number validation
+        if(captureType === "nozzle"){
+            if(!nozzleNumber){
+                return res.status(400).json({message : "nozzle number is required"})
+            }
+            const numericNozzleNumber = Number(nozzleNumber);
+
+            if(![1, 2, 3, 4].includes(numericNozzleNumber)){
+                return res.status(400).json({message : "nozle number must be nozzle1 ,2, 3 or 4"})
+            }
+
+        }
+
 
         // alowed image type
         const allowedType = {
@@ -36,7 +49,7 @@ export const uploadCaptureImage = async(req , res) => {
 
         if(!allowedType[captureType].includes(imageType)){
             return res.status(400).json({
-                message : `invalid inage type for ${captureType}`
+                message : `invalid image type for ${captureType}`
             })
         }
 
@@ -54,19 +67,30 @@ export const uploadCaptureImage = async(req , res) => {
             })
         }
         else{
-            capture = await Capture.findOne({
+            const captureQuery = {
                 admin : adminId,
                 captureType,
                 status : "in_progress"
-            }).sort({createdAt : -1})
+            }
+            if(captureType === "nozzle"){
+                captureQuery.nozzleNumber = Number(nozzleNumber)
+            }
+            
+            capture = await Capture.findOne(captureQuery).sort({createdAt : -1})
         }
         
     
         // chechk active capture type
         if(capture){
             if(capture.captureType !== captureType){
-                return res.status(400).json({message : `an active ${capture.captureType} capture already exist `})
+                return res.status(400).json({message : "Capture type does not match"})
             }
+            
+            // check nozzle number
+            if(captureType === "nozzle" && capture.nozzleNumber !== Number(nozzleNumber)){
+                return res.status(400).json({message : "nozzle number does not match this capture"})
+            }
+
             if(!capture.expiresAt || new Date() > capture.expiresAt){
                 capture.status = "expired",
                 await capture.save();
@@ -89,17 +113,18 @@ export const uploadCaptureImage = async(req , res) => {
                 return res.status(400).json({message : "the first image must required"})
             }
 
-            const startTime = new Date();
-            const expiryTime =new Date(
-                startTime.getTime() + 2 *60 *1000
+            const startedAt = new Date();
+            const expiresAt =new Date(
+                startedAt.getTime() + 2 *60 *1000
             );
 
             capture = await Capture.create({
                 admin : adminId,
                 captureType,
+                nozzleNumber : captureType === "nozzle"?Number(nozzleNumber):null,
                 status : "in_progress",
-                startedAt : startTime,
-                expiresAt : expiryTime,
+                startedAt ,
+                expiresAt ,
                 completedAt : null ,
                 images : []
             })
@@ -125,10 +150,11 @@ export const uploadCaptureImage = async(req , res) => {
             const uploadRequiredImages = capture.images.filter(
                 image => requiredImages.includes(image.imageType)
             ).map(image => image.imageType)
+
             const nextRequiredImage = requiredImages.find(
                 type => !uploadRequiredImages.includes(type));
 
-                if(imageType !== nextRequiredImage){
+                if(isRequiredImage && imageType !== nextRequiredImage){
             return res.status(400).json({message : `please upload ${nextRequiredImage} first`})
             }
         }
@@ -167,16 +193,22 @@ export const uploadCaptureImage = async(req , res) => {
         })
 
         // check required image
-        const uploadRequiredTypes = capture.images.filter(
-            image => requiredImages.includes(image.imageType)
-        ).map(image => image.imageType);
+        // const uploadRequiredTypes = capture.images.filter(
+        //     image => requiredImages.includes(image.imageType)
+        // ).map(image => image.imageType);
 
-        const allRequiredUploaded = requiredImages.every(
-            type => uploadRequiredTypes.includes(type)
+        const uploadedTypes = capture.images.map(
+            image => image.imageType
         )
 
+        const allRequiredUploaded = requiredImages.every(
+            type => uploadedTypes.includes(type)
+        )
+
+        await capture.save();
+
         // next image
-        const nextRequiredImage = requiredImages.find(type => !uploadRequiredTypes.includes(type)) || null;
+        const nextRequiredImage = requiredImages.find(type => !uploadedTypes.includes(type)) || null;
 
         // complete when required image complete
         // if(allRequiredUploaded && capture.status === "in_progress"){
@@ -199,6 +231,7 @@ export const uploadCaptureImage = async(req , res) => {
             capture : {
                 id : capture._id,
                 captureType : capture.captureType,
+                nozzleNumber : capture.nozzleNumber,
                 status : capture.status,
                 startedAt : capture.startedAt,
                 expiresAt  : capture.expiresAt,
@@ -211,7 +244,7 @@ export const uploadCaptureImage = async(req , res) => {
                     capturedAt : image.captureAt
                 })),
                 requiredImagesCompleted : allRequiredUploaded,
-                nextRequiredImage
+                nextRequiredImage 
             }
         })
     } catch (error) {
@@ -255,16 +288,16 @@ export const completeCapture = async(req,res) =>{
         }
 
         // required image
-        const requiredTypes = {
-            nozzle : ["digitalMachine","counter"],
-            meter : ["vb1","vs1"]
-        }
+        // const requiredTypes = {
+        //     nozzle : ["digitalMachine","counter"],
+        //     meter : ["vb1","vs1"]
+        // }
 
-        const requiredImages = requiredTypes[capture.captureType];
-        const uploadedImage = capture.images.map(image => image.imageType);
+        const requiredTypes = capture.captureType === "meter"?["vb1","vs1"] : ["digitalMachine","counter"]
+        const uploadedImages = capture.images.map(image => image.imageType);
 
         // check all required images
-        const missingImages = requiredImages.filter(type => !uploadedImage.includes(type));
+        const missingImages = requiredTypes.filter(type => !uploadedImages.includes(type));
 
         if(missingImages.length > 0){
             return res.status(400).json({
@@ -285,6 +318,7 @@ export const completeCapture = async(req,res) =>{
             capture : {
                 id : capture._id,
                 captureType : capture.captureType,
+                nozzleNumber : capture.nozzleNumber,
                 status : capture.status,
                 startedAt : capture.startedAt,
                 expiresAt : capture.expiresAt,
@@ -304,12 +338,27 @@ export const completeCapture = async(req,res) =>{
 export const getCaptureHistory = async(req , res) => {
     try {
         const adminId = req.user.id;
-        const captures = await Capture.find({admin : adminId}).sort({createdAt : -1});
+        const captures = await Capture.find({admin : adminId}).sort({createdAt : -1}).lean();
 
         return res.status(200).json({
             success : true,
             count : captures.length,
-            captures
+            captures : captures.map(capture => ({
+                id : capture._id,
+                captureType : capture.captureType,
+                nozzleNumber : capture.nozzleNumber,
+                status : capture.status,
+                startedAt : capture.startedAt,
+                expiresAt : capture.expiresAt,
+                completedAt : capture.completedAt,
+                images : capture.images.map(
+                    image =>({
+                        imageType : image.imageType,
+                        imageUrl : image.imageUrl,
+                        captureAt : image.captureAt
+                    })
+                )
+            }))
         })
 
     } catch (error) {

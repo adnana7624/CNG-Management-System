@@ -16,3 +16,5 @@ captureRoutes.get("/history",auth , getCaptureHistory);
 
 
 export default captureRoutes;
+
+
