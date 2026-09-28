@@ -139,8 +139,14 @@ const expenseSchema = new mongoose.Schema(
             trim: true,
             default: "",
         },
-    },
-    {
+
+         admin: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Admin",
+    required: true,
+},
+        },
+       {
         timestamps: true,
     }
 );
