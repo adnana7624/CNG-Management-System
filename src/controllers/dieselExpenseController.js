@@ -1,7 +1,3 @@
-
-
-
-
 import mongoose from "mongoose";
 import { DieselExpense } from "../models/dieselExpenseModel.js";
 
