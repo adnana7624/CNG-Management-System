@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const dieselExpenseSchema = new mongoose.Schema(
     {
+        admin:{
+            type: mongoose.Schema.Types.ObjectId,
+            ref:"admin",
+            required:true
+        },
         date: {
             type: Date,
             required: true,

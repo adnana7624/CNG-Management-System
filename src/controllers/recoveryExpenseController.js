@@ -1,72 +1,11 @@
-// import { RecoveryExpense } from "../models/recoveryExpenseModel.js";
-
-// // Create Recovery Expense
-// export const createRecoveryExpense = async (req, res) => {
-//     try {
-//         const {
-//             date,
-//             category,
-//             recoveryAmount,
-//             remarks,
-//             paymentMode,
-//         } = req.body;
-
-//         if (!date || !category || recoveryAmount === undefined || !paymentMode) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Date, category, recovery amount and payment mode are required",
-//             });
-//         }
-
-//         const recoveryExpense = await RecoveryExpense.create({
-//             date,
-//             category,
-//             recoveryAmount,
-//             remarks,
-//             paymentMode,
-//         });
-
-//         res.status(201).json({
-//             success: true,
-//             message: "Recovery expense created successfully",
-//             recoveryExpense,
-//         });
-//     } catch (error) {
-//         res.status(500).json({
-//             success: false,
-//             message: error.message,
-//         });
-//     }
-// };
-
-// // Get All Recovery Expenses
-// export const getRecoveryExpenses = async (req, res) => {
-//     try {
-//         const recoveryExpenses = await RecoveryExpense.find()
-//             .populate("category")
-//             .sort({ createdAt: -1 });
-
-//         res.status(200).json({
-//             success: true,
-//             count: recoveryExpenses.length,
-//             recoveryExpenses,
-//         });
-//     } catch (error) {
-//         res.status(500).json({
-//             success: false,
-//             message: error.message,
-//         });
-//     }
-// };
-
-
-
 import mongoose from "mongoose";
 import { RecoveryExpense } from "../models/recoveryExpenseModel.js";
 
 // Create Recovery Expense
 export const createRecoveryExpense = async (req, res) => {
     try {
+        const adminId = req.user.id;
+
         const {
             date,
             category,
@@ -106,6 +45,7 @@ export const createRecoveryExpense = async (req, res) => {
         }
 
         const recoveryExpense = await RecoveryExpense.create({
+            admin: adminId,
             date,
             category,
             recoveryAmount,
@@ -113,13 +53,13 @@ export const createRecoveryExpense = async (req, res) => {
             paymentMode,
         });
 
-        res.status(201).json({
+        return res.status(201).json({
             success: true,
             message: "Recovery expense created successfully",
             recoveryExpense,
         });
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: error.message,
         });
@@ -130,17 +70,21 @@ export const createRecoveryExpense = async (req, res) => {
 // Get All Recovery Expenses
 export const getRecoveryExpenses = async (req, res) => {
     try {
-        const recoveryExpenses = await RecoveryExpense.find()
+        const adminId = req.user.id;
+
+        const recoveryExpenses = await RecoveryExpense.find({
+            admin: adminId,
+        })
             .populate("category")
             .sort({ createdAt: -1 });
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             count: recoveryExpenses.length,
             recoveryExpenses,
         });
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: error.message,
         });
@@ -152,6 +96,8 @@ export const getRecoveryExpenses = async (req, res) => {
 export const updateRecoveryExpense = async (req, res) => {
     try {
         const { id } = req.params;
+
+        const adminId = req.user.id;
 
         // Validate Recovery Expense ID
         if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -199,21 +145,23 @@ export const updateRecoveryExpense = async (req, res) => {
             });
         }
 
-        const recoveryExpense =
-            await RecoveryExpense.findByIdAndUpdate(
-                id,
-                {
-                    date,
-                    category,
-                    recoveryAmount,
-                    remarks,
-                    paymentMode,
-                },
-                {
-                    new: true,
-                    runValidators: true,
-                }
-            ).populate("category");
+        const recoveryExpense = await RecoveryExpense.findOneAndUpdate(
+            {
+                _id: id,
+                admin: adminId,
+            },
+            {
+                date,
+                category,
+                recoveryAmount,
+                remarks,
+                paymentMode,
+            },
+            {
+                new: true,
+                runValidators: true,
+            }
+        ).populate("category");
 
         if (!recoveryExpense) {
             return res.status(404).json({
@@ -222,13 +170,13 @@ export const updateRecoveryExpense = async (req, res) => {
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Recovery expense updated successfully",
             recoveryExpense,
         });
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: error.message,
         });
@@ -241,6 +189,8 @@ export const deleteRecoveryExpense = async (req, res) => {
     try {
         const { id } = req.params;
 
+        const adminId = req.user.id;
+
         // Validate ID
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
@@ -249,8 +199,10 @@ export const deleteRecoveryExpense = async (req, res) => {
             });
         }
 
-        const recoveryExpense =
-            await RecoveryExpense.findByIdAndDelete(id);
+        const recoveryExpense = await RecoveryExpense.findOneAndDelete({
+            _id: id,
+            admin: adminId,
+        });
 
         if (!recoveryExpense) {
             return res.status(404).json({
@@ -259,12 +211,12 @@ export const deleteRecoveryExpense = async (req, res) => {
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Recovery expense deleted successfully",
         });
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: error.message,
         });
