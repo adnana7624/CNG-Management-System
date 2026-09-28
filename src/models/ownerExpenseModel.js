@@ -22,7 +22,7 @@ const ownerExpenseSchema = new mongoose.Schema(
 
         owner: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Owner",
+            ref: "Admin",
             required: true,
         },
 
@@ -37,6 +37,12 @@ const ownerExpenseSchema = new mongoose.Schema(
             trim: true,
             default: "",
         },
+
+        admin: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Admin",
+            required: true,
+        },
     },
     {
         timestamps: true,
@@ -46,4 +52,4 @@ const ownerExpenseSchema = new mongoose.Schema(
 export const OwnerExpense = mongoose.model(
     "OwnerExpense",
     ownerExpenseSchema
-);
+); 

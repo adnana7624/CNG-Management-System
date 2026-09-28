@@ -1,116 +1,61 @@
-// // import { ExpenseCategory } from "../models/expenseCategoryModel.js";
-
-// // // Create Expense Category
-// // export const createExpenseCategory = async (req, res) => {
-// //     try {
-// //         const { name, description } = req.body;
-
-// //         const expenseCategory = await ExpenseCategory.create({
-// //             name,
-// //             description,
-// //             admin: req.user._id,
-// //         });
-
-// //         res.status(201).json({
-// //             success: true,
-// //             message: "Expense category created successfully",
-// //             expenseCategory,
-// //         });
-// //     } catch (error) {
-// //         res.status(500).json({
-// //             success: false,
-// //             message: error.message,
-// //         });
-// //     }
-// // };
-
-// // // Get Expense Categories
-// // export const getExpenseCategories = async (req, res) => {
-// //     try {
-// //         const expenseCategories = await ExpenseCategory.find({
-// //             admin: req.user._id,
-// //         }).sort({ createdAt: -1 });
-
-// //         res.status(200).json({
-// //             success: true,
-// //             count: expenseCategories.length,
-// //             expenseCategories,
-// //         });
-// //     } catch (error) {
-// //         res.status(500).json({
-// //             success: false,
-// //             message: error.message,
-// //         });
-// //     }
-// // };
-
-
-// import { ExpenseCategory } from "../models/expenseCategoryModel.js";
-
-// // Create Expense Category
-// export const createExpenseCategory = async (req, res) => {
-//     try {
-//         const { name } = req.body;
-
-//         const expenseCategory = await ExpenseCategory.create({
-//             name,
-//         });
-
-//         res.status(201).json({
-//             success: true,
-//             message: "Expense category created successfully",
-//             expenseCategory,
-//         });
-//     } catch (error) {
-//         res.status(500).json({
-//             success: false,
-//             message: error.message,
-//         });
-//     }
-// };
-
-// // Get All Expense Categories
-// export const getExpenseCategories = async (req, res) => {
-//     try {
-//         const expenseCategories = await ExpenseCategory.find().sort({
-//             createdAt: -1,
-//         });
-
-//         res.status(200).json({
-//             success: true,
-//             count: expenseCategories.length,
-//             expenseCategories,
-//         });
-//     } catch (error) {
-//         res.status(500).json({
-//             success: false,
-//             message: error.message,
-//         });
-//     }
-// };
-
-
-
+import mongoose from "mongoose";
 import { ExpenseCategory } from "../models/expenseCategoryModel.js";
 
 // Create Expense Category
 export const createExpenseCategory = async (req, res) => {
     try {
         const { name } = req.body;
+        const adminId = req.user.id;
 
-        const expenseCategory = await ExpenseCategory.create({
-            name,
+        // Validate name
+        if (!name || typeof name !== "string" || !name.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Category name is required",
+            });
+        }
+
+        const categoryName = name.trim();
+
+        // Check duplicate category for same admin
+        const existingCategory = await ExpenseCategory.findOne({
+            admin: adminId,
+            name: categoryName,
+        }).collation({
+            locale: "en",
+            strength: 2,
         });
 
-        res.status(201).json({
+        if (existingCategory) {
+            return res.status(409).json({
+                success: false,
+                message: "This category already exists",
+            });
+        }
+
+        const expenseCategory = await ExpenseCategory.create({
+            name: categoryName,
+            admin: adminId,
+        });
+
+        return res.status(201).json({
             success: true,
             message: "Expense category created successfully",
             expenseCategory,
         });
     } catch (error) {
-        res.status(500).json({
+        // MongoDB duplicate key error
+        if (error.code === 11000) {
+            return res.status(409).json({
+                success: false,
+                message: "This category already exists",
+            });
+        }
+
+        return res.status(500).json({
             success: false,
-            message: error.message,
+            message: "Failed to create expense category",
+            error: error.message,
         });
     }
 };
@@ -118,19 +63,24 @@ export const createExpenseCategory = async (req, res) => {
 // Get All Expense Categories
 export const getExpenseCategories = async (req, res) => {
     try {
-        const expenseCategories = await ExpenseCategory.find().sort({
+        const adminId = req.user.id;
+
+        const expenseCategories = await ExpenseCategory.find({
+            admin: adminId,
+        }).sort({
             createdAt: -1,
         });
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             count: expenseCategories.length,
             expenseCategories,
         });
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
-            message: error.message,
+            message: "Failed to fetch expense categories",
+            error: error.message,
         });
     }
 };
@@ -140,10 +90,51 @@ export const updateExpenseCategory = async (req, res) => {
     try {
         const { id } = req.params;
         const { name } = req.body;
+        const adminId = req.user.id;
 
-        const expenseCategory = await ExpenseCategory.findByIdAndUpdate(
-            id,
-            { name },
+        // Validate ID
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid category ID",
+            });
+        }
+
+        // Validate name
+        if (!name || typeof name !== "string" || !name.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Category name is required",
+            });
+        }
+
+        const categoryName = name.trim();
+
+        // Check duplicate category
+        const existingCategory = await ExpenseCategory.findOne({
+            admin: adminId,
+            name: categoryName,
+            _id: { $ne: id },
+        }).collation({
+            locale: "en",
+            strength: 2,
+        });
+
+        if (existingCategory) {
+            return res.status(409).json({
+                success: false,
+                message: "This category already exists",
+            });
+        }
+
+        const expenseCategory = await ExpenseCategory.findOneAndUpdate(
+            {
+                _id: id,
+                admin: adminId,
+            },
+            {
+                name: categoryName,
+            },
             {
                 new: true,
                 runValidators: true,
@@ -157,15 +148,23 @@ export const updateExpenseCategory = async (req, res) => {
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Expense category updated successfully",
             expenseCategory,
         });
     } catch (error) {
-        res.status(500).json({
+        if (error.code === 11000) {
+            return res.status(409).json({
+                success: false,
+                message: "This category already exists",
+            });
+        }
+
+        return res.status(500).json({
             success: false,
-            message: error.message,
+            message: "Failed to update expense category",
+            error: error.message,
         });
     }
 };
@@ -174,8 +173,20 @@ export const updateExpenseCategory = async (req, res) => {
 export const deleteExpenseCategory = async (req, res) => {
     try {
         const { id } = req.params;
+        const adminId = req.user.id;
 
-        const expenseCategory = await ExpenseCategory.findByIdAndDelete(id);
+        // Validate ID
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid category ID",
+            });
+        }
+
+        const expenseCategory = await ExpenseCategory.findOneAndDelete({
+            _id: id,
+            admin: adminId,
+        });
 
         if (!expenseCategory) {
             return res.status(404).json({
@@ -184,17 +195,15 @@ export const deleteExpenseCategory = async (req, res) => {
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Expense category deleted successfully",
         });
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
-            message: error.message,
+            message: "Failed to delete expense category",
+            error: error.message,
         });
     }
-};
-
-
-
+}

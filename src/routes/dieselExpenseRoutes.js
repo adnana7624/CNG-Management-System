@@ -7,19 +7,19 @@ import {
     updateDieselExpense,
     deleteDieselExpense,
 } from "../controllers/dieselExpenseController.js";
-
+import { auth } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 // Create Diesel Expense
-router.post("/create", createDieselExpense);
+router.post("/create",auth, createDieselExpense);
 
 // Get All Diesel Expenses
-router.get("/get", getDieselExpenses);
+router.get("/get",auth, getDieselExpenses);
 
 // Update Diesel Expense
-router.put("/:id", updateDieselExpense);
+router.put("/:id",auth, updateDieselExpense);
 
 // Delete Diesel Expense
-router.delete("/:id", deleteDieselExpense);
+router.delete("/:id",auth, deleteDieselExpense);
 
 export default router;

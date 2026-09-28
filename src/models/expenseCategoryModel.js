@@ -6,8 +6,15 @@ const expenseCategorySchema = new mongoose.Schema(
             type: String,
             required: true,
             trim: true,
-            unique: true,
+            
         },
+          admin: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Admin",
+            required: true,
+        },
+
+
     },
     {
         timestamps: true,
