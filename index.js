@@ -20,6 +20,8 @@ import expenseCategoryRoutes from "./src/routes/expenseCategoryRoutes.js";
 import recoveryExpenseRoutes from "./src/routes/recoveryExpenseRoutes.js";
 import dieselExpenseRoutes from "./src/routes/dieselExpenseRoutes.js";
 import ownerExpenseRoutes from "./src/routes/ownerExpenseRoutes.js";
+import dashboardRoutes from "./src/routes/dashBoardRoutes.js";
+import captureRoutes from "./src/routes/captureRoutes.js";
 
 
 const app = express();
@@ -47,6 +49,8 @@ app.use("/api/v1/loans", loanRoutes);
 app.use("/api/v1/inventory", inventoryRoutes);
 app.use("/api/v1/profile",profileRoutes);
 app.use("/api/v1/ledger",ledgerRoutes);
+app.use("/api/v1/dashboard",dashboardRoutes);
+app.use("/api/v1/capture",captureRoutes);
 
 app.get("/",(req ,res)=>{
     // console.log("app runnig succesfuly")
