@@ -4,256 +4,637 @@ import {uploadOnCloudinary} from "../utils/cloudinary.js";
 
 
 
-export const uploadCaptureImage = async(req , res) => {
+// export const uploadCaptureImage = async(req , res) => {
+//     try {
+//         const adminId = req.user.id;
+        
+//         const {captureType , imageType , captureId , nozzleNumber} = req.body;
+
+//         let capture = null;
+
+//         if(!req.file){
+//             return res.status(400).json({message :"image is required"})
+//         }
+//         if(!imageType){
+//             return res.status(400).json({message : "image type is required"})
+//         }
+
+//         if(!captureType){
+//             return res.status(400).json({message : "capture type is required"})
+//         }
+
+//         if(!["nozzle","meter"].includes(captureType)){
+//             return res.status(400).json({message : "capture type must be nozzel or meter"})
+//         }
+
+//         // nozzle number validation
+//         if(captureType === "nozzle"){
+//             if(!nozzleNumber){
+//                 return res.status(400).json({message : "nozzle number is required"})
+//             }
+//             const numericNozzleNumber = Number(nozzleNumber);
+
+//             if(![1, 2, 3, 4].includes(numericNozzleNumber)){
+//                 return res.status(400).json({message : "nozle number must be nozzle1 ,2, 3 or 4"})
+//             }
+
+//         }
+
+
+//         // alowed image type
+//         const allowedType = {
+//             nozzle : ["digitalMachine" , "counter" , "microMotion"],
+//             meter : ["vb1" , "vs1" , "rflow"]
+//         };
+
+//         if(!allowedType[captureType].includes(imageType)){
+//             return res.status(400).json({
+//                 message : `invalid image type for ${captureType}`
+//             })
+//         }
+
+//         // set required images
+//         const requiredImages = captureType === "meter"?["vb1","vs1"] : ["digitalMachine","counter"];
+
+//         const isRequiredImage = requiredImages.includes(imageType);
+
+//         // let capture = null;
+
+//         if(captureId){
+//             capture = await Capture.findOne({
+//                 _id : captureId,
+//                 admin : adminId
+//             })
+//         }
+//         else{
+//             const captureQuery = {
+//                 admin : adminId,
+//                 captureType,
+//                 status : "in_progress"
+//             }
+//             if(captureType === "nozzle"){
+//                 captureQuery.nozzleNumber = Number(nozzleNumber)
+//             }
+            
+//             capture = await Capture.findOne(captureQuery).sort({createdAt : -1})
+//         }
+        
+    
+//         // chechk active capture type
+//         if(capture){
+//             if(capture.captureType !== captureType){
+//                 return res.status(400).json({message : "Capture type does not match"})
+//             }
+            
+//             // check nozzle number
+//             if(captureType === "nozzle" && capture.nozzleNumber !== Number(nozzleNumber)){
+//                 return res.status(400).json({message : "nozzle number does not match this capture"})
+//             }
+
+//             if(!capture.expiresAt || new Date() > capture.expiresAt){
+//                 capture.status = "expired",
+//                 await capture.save();
+
+//                 return res.status(400).json({
+//                     message : "2 minute capture window has expired, please start again"
+//                 })
+//             }
+//             // already expired capture
+//             if(capture.status === "expired"){
+//                 return res.status(400).json({message : "this capture has expired"})
+//             }
+//             if(capture.status === "completed" && isRequiredImage){
+//                 return res.status(400).json({message : "required image already completed"})
+//             }
+
+//         };
+//         if(!capture){
+//             if(!isRequiredImage){
+//                 return res.status(400).json({message : "the first image must required"})
+//             }
+
+//             const startedAt = new Date();
+//             const expiresAt =new Date(
+//                 startedAt.getTime() + 2 *60 *1000
+//             );
+
+//             capture = await Capture.create({
+//                 admin : adminId,
+//                 captureType,
+//                 nozzleNumber : captureType === "nozzle"?Number(nozzleNumber):null,
+//                 status : "in_progress",
+//                 startedAt ,
+//                 expiresAt ,
+//                 completedAt : null ,
+//                 images : []
+//             })
+//         }
+
+//         if(!Array.isArray(capture.images)){
+//             capture.images = [];
+//         }
+
+//         // check duplicate image
+//         const alreadyExists = capture.images.some(
+//             image => image.imageType === imageType
+//         )
+
+//         if(alreadyExists){
+//             return res.status(400).json({
+//                 message : `${imageType} image has been alreadt uploaded`
+//             })
+//         }
+
+//         // check required image order
+//         if(isRequiredImage){
+//             const uploadRequiredImages = capture.images.filter(
+//                 image => requiredImages.includes(image.imageType)
+//             ).map(image => image.imageType)
+
+//             const nextRequiredImage = requiredImages.find(
+//                 type => !uploadRequiredImages.includes(type));
+
+//                 if(isRequiredImage && imageType !== nextRequiredImage){
+//             return res.status(400).json({message : `please upload ${nextRequiredImage} first`})
+//             }
+//         }
+
+//         // optional image check
+//         if(!isRequiredImage){
+//             const uploadRequiredImages = capture.images.filter(
+//                 image => requiredImages.includes(image.imageType)
+//             )
+
+//             const allRequiredUploaded = requiredImages.every(
+//                 type => uploadRequiredImages.includes(type)
+//             )
+
+//             if(!allRequiredUploaded){
+//                 return res.status(400).json({message : "upload all required image first"})
+//             }
+
+//         }
+
+//         // upload image on cloudinary
+//         const cloudinaryResult = await uploadOnCloudinary(req.file.path);
+
+//         if(!cloudinaryResult){
+//             return res.status(500).json({message : "Image UPload Failed"})
+//         }
+
+//         // add image to 
+//         const captureAt = new Date();
+
+//         capture.images.push({
+//             imageType ,
+//             imageUrl : cloudinaryResult.secure_url,
+//             publicId : cloudinaryResult.public_id,
+//             captureAt : new Date()
+//         })
+
+//         // check required image
+//         // const uploadRequiredTypes = capture.images.filter(
+//         //     image => requiredImages.includes(image.imageType)
+//         // ).map(image => image.imageType);
+
+//         const uploadedTypes = capture.images.map(
+//             image => image.imageType
+//         )
+
+//         const allRequiredUploaded = requiredImages.every(
+//             type => uploadedTypes.includes(type)
+//         )
+
+//         await capture.save();
+
+//         // next image
+//         const nextRequiredImage = requiredImages.find(type => !uploadedTypes.includes(type)) || null;
+
+//         // complete when required image complete
+//         // if(allRequiredUploaded && capture.status === "in_progress"){
+//         //     capture.status = "completed";
+//         //     capture.completedAt = new Date();
+            
+//         // }
+
+//         await capture.save();
+
+        
+//         return res.status(200).json({
+//             success : true,
+//             message : `${imageType} image uploaded successfully`,
+//             images : {
+//                 imageType,
+//                 imageUrl : cloudinaryResult.secure_url,
+//                 captureAt:capture.images[capture.images.length-1 ].captureAt
+//             },
+//             capture : {
+//                 id : capture._id,
+//                 captureType : capture.captureType,
+//                 nozzleNumber : capture.nozzleNumber,
+//                 status : capture.status,
+//                 startedAt : capture.startedAt,
+//                 expiresAt  : capture.expiresAt,
+//                 completedAt : capture.completedAt,
+//                 requiredImages : requiredImages,
+//                 uploadedImage : capture.images.map(image => ({
+
+//                     imageType : image.imageType,
+//                     imageUrl : image.imageUrl,
+//                     capturedAt : image.captureAt
+//                 })),
+//                 requiredImagesCompleted : allRequiredUploaded,
+//                 nextRequiredImage 
+//             }
+//         })
+//     } catch (error) {
+//         return res.status(500).json({
+//             success : false,
+//             message : error.message
+//         })
+//     }
+// }
+
+
+
+export const uploadCaptureImage = async (req, res) => {
     try {
         const adminId = req.user.id;
-        
-        const {captureType , imageType , captureId , nozzleNumber} = req.body;
+
+        const {
+            captureType,
+            imageType,
+            captureId,
+            nozzleNumber
+        } = req.body;
 
         let capture = null;
 
-        if(!req.file){
-            return res.status(400).json({message :"image is required"})
-        }
-        if(!imageType){
-            return res.status(400).json({message : "image type is required"})
+        // =========================
+        // BASIC VALIDATION
+        // =========================
+
+        if (!req.file) {
+            return res.status(400).json({
+                message: "image is required"
+            });
         }
 
-        if(!captureType){
-            return res.status(400).json({message : "capture type is required"})
+        if (!imageType) {
+            return res.status(400).json({
+                message: "image type is required"
+            });
         }
 
-        if(!["nozzle","meter"].includes(captureType)){
-            return res.status(400).json({message : "capture type must be nozzel or meter"})
+        if (!captureType) {
+            return res.status(400).json({
+                message: "capture type is required"
+            });
         }
 
-        // nozzle number validation
-        if(captureType === "nozzle"){
-            if(!nozzleNumber){
-                return res.status(400).json({message : "nozzle number is required"})
+        if (!["nozzle", "meter"].includes(captureType)) {
+            return res.status(400).json({
+                message: "capture type must be nozzle or meter"
+            });
+        }
+
+        // =========================
+        // NOZZLE NUMBER VALIDATION
+        // =========================
+
+        if (captureType === "nozzle") {
+            if (!nozzleNumber) {
+                return res.status(400).json({
+                    message: "nozzle number is required"
+                });
             }
+
             const numericNozzleNumber = Number(nozzleNumber);
 
-            if(![1, 2, 3, 4].includes(numericNozzleNumber)){
-                return res.status(400).json({message : "nozle number must be nozzle1 ,2, 3 or 4"})
+            if (![1, 2, 3, 4].includes(numericNozzleNumber)) {
+                return res.status(400).json({
+                    message: "nozzle number must be 1, 2, 3 or 4"
+                });
             }
-
         }
 
+        // =========================
+        // ALLOWED IMAGE TYPES
+        // =========================
 
-        // alowed image type
         const allowedType = {
-            nozzle : ["digitalMachine" , "counter" , "microMotion"],
-            meter : ["vb1" , "vs1" , "rflow"]
+            nozzle: [
+                "digitalMachine",
+                "counter",
+                "microMotion"
+            ],
+            meter: [
+                "vb1",
+                "vs1",
+                "rflow"
+            ]
         };
 
-        if(!allowedType[captureType].includes(imageType)){
+        if (!allowedType[captureType].includes(imageType)) {
             return res.status(400).json({
-                message : `invalid image type for ${captureType}`
-            })
+                message: `invalid image type for ${captureType}`
+            });
         }
 
-        // set required images
-        const requiredImages = captureType === "meter"?["vb1","vs1"] : ["digitalMachine","counter"];
+        // =========================
+        // REQUIRED IMAGES
+        // =========================
+
+        const requiredImages =
+            captureType === "meter"
+                ? ["vb1", "vs1"]
+                : ["digitalMachine", "counter"];
 
         const isRequiredImage = requiredImages.includes(imageType);
 
-        // let capture = null;
+        // =========================
+        // FIND CAPTURE
+        // =========================
 
-        if(captureId){
+        if (captureId) {
+
             capture = await Capture.findOne({
-                _id : captureId,
-                admin : adminId
-            })
-        }
-        else{
+                _id: captureId,
+                admin: adminId
+            });
+
+        } else {
+
             const captureQuery = {
-                admin : adminId,
+                admin: adminId,
                 captureType,
-                status : "in_progress"
-            }
-            if(captureType === "nozzle"){
-                captureQuery.nozzleNumber = Number(nozzleNumber)
-            }
-            
-            capture = await Capture.findOne(captureQuery).sort({createdAt : -1})
-        }
-        
-    
-        // chechk active capture type
-        if(capture){
-            if(capture.captureType !== captureType){
-                return res.status(400).json({message : "Capture type does not match"})
-            }
-            
-            // check nozzle number
-            if(captureType === "nozzle" && capture.nozzleNumber !== Number(nozzleNumber)){
-                return res.status(400).json({message : "nozzle number does not match this capture"})
+                status: "in_progress"
+            };
+
+            if (captureType === "nozzle") {
+                captureQuery.nozzleNumber = Number(nozzleNumber);
             }
 
-            if(!capture.expiresAt || new Date() > capture.expiresAt){
-                capture.status = "expired",
+            capture = await Capture.findOne(captureQuery)
+                .sort({ createdAt: -1 });
+        }
+
+        // =========================
+        // CHECK EXISTING CAPTURE
+        // =========================
+
+        if (capture) {
+
+            // Capture type must match
+            if (capture.captureType !== captureType) {
+                return res.status(400).json({
+                    message: "capture type does not match"
+                });
+            }
+
+            // Nozzle number must match
+            if (
+                captureType === "nozzle" &&
+                capture.nozzleNumber !== Number(nozzleNumber)
+            ) {
+                return res.status(400).json({
+                    message: "nozzle number does not match this capture"
+                });
+            }
+
+            // Check expiry
+            if (
+                !capture.expiresAt ||
+                new Date() > new Date(capture.expiresAt)
+            ) {
+
+                capture.status = "expired";
+
                 await capture.save();
 
                 return res.status(400).json({
-                    message : "2 minute capture window has expired, please start again"
-                })
-            }
-            // already expired capture
-            if(capture.status === "expired"){
-                return res.status(400).json({message : "this capture has expired"})
-            }
-            if(capture.status === "completed" && isRequiredImage){
-                return res.status(400).json({message : "required image already completed"})
+                    message: "2 minute capture window has expired, please start again"
+                });
             }
 
-        };
-        if(!capture){
-            if(!isRequiredImage){
-                return res.status(400).json({message : "the first image must required"})
+            // Already expired
+            if (capture.status === "expired") {
+                return res.status(400).json({
+                    message: "this capture has expired"
+                });
+            }
+
+            // Already completed
+            if (capture.status === "completed") {
+                return res.status(400).json({
+                    message: "capture already completed"
+                });
+            }
+        }
+
+        // =========================
+        // CREATE NEW CAPTURE
+        // =========================
+
+        if (!capture) {
+
+            // Optional image cannot start a capture
+            if (!isRequiredImage) {
+                return res.status(400).json({
+                    message: "the first image must be a required image"
+                });
             }
 
             const startedAt = new Date();
-            const expiresAt =new Date(
-                startedAt.getTime() + 2 *60 *1000
+
+            const expiresAt = new Date(
+                startedAt.getTime() + 2 * 60 * 1000
             );
 
             capture = await Capture.create({
-                admin : adminId,
+                admin: adminId,
                 captureType,
-                nozzleNumber : captureType === "nozzle"?Number(nozzleNumber):null,
-                status : "in_progress",
-                startedAt ,
-                expiresAt ,
-                completedAt : null ,
-                images : []
-            })
+                nozzleNumber:
+                    captureType === "nozzle"
+                        ? Number(nozzleNumber)
+                        : null,
+                status: "in_progress",
+                startedAt,
+                expiresAt,
+                completedAt: null,
+                images: []
+            });
         }
 
-        if(!Array.isArray(capture.images)){
+        // =========================
+        // MAKE SURE IMAGES IS ARRAY
+        // =========================
+
+        if (!Array.isArray(capture.images)) {
             capture.images = [];
         }
 
-        // check duplicate image
+        // =========================
+        // CHECK DUPLICATE IMAGE
+        // =========================
+
         const alreadyExists = capture.images.some(
             image => image.imageType === imageType
-        )
+        );
 
-        if(alreadyExists){
+        if (alreadyExists) {
             return res.status(400).json({
-                message : `${imageType} image has been alreadt uploaded`
-            })
+                message: `${imageType} image has already been uploaded`
+            });
         }
 
-        // check required image order
-        if(isRequiredImage){
-            const uploadRequiredImages = capture.images.filter(
-                image => requiredImages.includes(image.imageType)
-            ).map(image => image.imageType)
+        // =========================
+        // REQUIRED IMAGE ORDER
+        // =========================
+
+        if (isRequiredImage) {
+
+            const uploadedRequiredTypes = capture.images
+                .filter(image =>
+                    requiredImages.includes(image.imageType)
+                )
+                .map(image => image.imageType);
 
             const nextRequiredImage = requiredImages.find(
-                type => !uploadRequiredImages.includes(type));
+                type => !uploadedRequiredTypes.includes(type)
+            );
 
-                if(isRequiredImage && imageType !== nextRequiredImage){
-            return res.status(400).json({message : `please upload ${nextRequiredImage} first`})
+            if (imageType !== nextRequiredImage) {
+                return res.status(400).json({
+                    message: `please upload ${nextRequiredImage} first`
+                });
             }
         }
 
-        // optional image check
-        if(!isRequiredImage){
-            const uploadRequiredImages = capture.images.filter(
-                image => requiredImages.includes(image.imageType)
-            )
+        // =========================
+        // OPTIONAL IMAGE CHECK
+        // =========================
 
+        if (!isRequiredImage) {
+
+            // Get only required image types
+            const uploadedRequiredTypes = capture.images
+                .filter(image =>
+                    requiredImages.includes(image.imageType)
+                )
+                .map(image => image.imageType);
+
+            // Check whether ALL required images exist
             const allRequiredUploaded = requiredImages.every(
-                type => uploadRequiredImages.includes(type)
-            )
+                type => uploadedRequiredTypes.includes(type)
+            );
 
-            if(!allRequiredUploaded){
-                return res.status(400).json({message : "upload all required image first"})
+            if (!allRequiredUploaded) {
+                return res.status(400).json({
+                    message: "upload all required image first"
+                });
             }
-
         }
 
-        // upload image on cloudinary
-        const cloudinaryResult = await uploadOnCloudinary(req.file.path);
+        // =========================
+        // UPLOAD TO CLOUDINARY
+        // =========================
 
-        if(!cloudinaryResult){
-            return res.status(500).json({message : "Image UPload Failed"})
+        const cloudinaryResult = await uploadOnCloudinary(
+            req.file.path
+        );
+
+        if (!cloudinaryResult) {
+            return res.status(500).json({
+                message: "image upload failed"
+            });
         }
 
-        // add image to 
+        // =========================
+        // ADD IMAGE TO CAPTURE
+        // =========================
+
         const captureAt = new Date();
 
         capture.images.push({
-            imageType ,
-            imageUrl : cloudinaryResult.secure_url,
-            publicId : cloudinaryResult.public_id,
-            captureAt : new Date()
-        })
+            imageType,
+            imageUrl: cloudinaryResult.secure_url,
+            publicId: cloudinaryResult.public_id,
+            captureAt
+        });
 
-        // check required image
-        // const uploadRequiredTypes = capture.images.filter(
-        //     image => requiredImages.includes(image.imageType)
-        // ).map(image => image.imageType);
+        // =========================
+        // CHECK REQUIRED IMAGES
+        // =========================
 
         const uploadedTypes = capture.images.map(
             image => image.imageType
-        )
+        );
 
         const allRequiredUploaded = requiredImages.every(
             type => uploadedTypes.includes(type)
-        )
+        );
 
+        // Save capture
         await capture.save();
 
-        // next image
-        const nextRequiredImage = requiredImages.find(type => !uploadedTypes.includes(type)) || null;
+        // =========================
+        // NEXT REQUIRED IMAGE
+        // =========================
 
-        // complete when required image complete
-        // if(allRequiredUploaded && capture.status === "in_progress"){
-        //     capture.status = "completed";
-        //     capture.completedAt = new Date();
-            
-        // }
+        const nextRequiredImage =
+            requiredImages.find(
+                type => !uploadedTypes.includes(type)
+            ) || null;
 
-        await capture.save();
+        // =========================
+        // RESPONSE
+        // =========================
 
-        
         return res.status(200).json({
-            success : true,
-            message : `${imageType} image uploaded successfully`,
-            images : {
-                imageType,
-                imageUrl : cloudinaryResult.secure_url,
-                captureAt:capture.images[capture.images.length-1 ].captureAt
-            },
-            capture : {
-                id : capture._id,
-                captureType : capture.captureType,
-                nozzleNumber : capture.nozzleNumber,
-                status : capture.status,
-                startedAt : capture.startedAt,
-                expiresAt  : capture.expiresAt,
-                completedAt : capture.completedAt,
-                requiredImages : requiredImages,
-                uploadedImage : capture.images.map(image => ({
+            success: true,
 
-                    imageType : image.imageType,
-                    imageUrl : image.imageUrl,
-                    capturedAt : image.captureAt
-                })),
-                requiredImagesCompleted : allRequiredUploaded,
-                nextRequiredImage 
+            message: `${imageType} image uploaded successfully`,
+
+            images: {
+                imageType,
+                imageUrl: cloudinaryResult.secure_url,
+                captureAt
+            },
+
+            capture: {
+                id: capture._id,
+                captureType: capture.captureType,
+                nozzleNumber: capture.nozzleNumber,
+                status: capture.status,
+                startedAt: capture.startedAt,
+                expiresAt: capture.expiresAt,
+                completedAt: capture.completedAt,
+
+                requiredImages,
+
+                uploadedImage: capture.images.map(
+                    image => ({
+                        imageType: image.imageType,
+                        imageUrl: image.imageUrl,
+                        capturedAt: image.captureAt
+                    })
+                ),
+
+                requiredImagesCompleted: allRequiredUploaded,
+
+                nextRequiredImage
             }
-        })
+        });
+
     } catch (error) {
+
         return res.status(500).json({
-            success : false,
-            message : error.message
-        })
+            success: false,
+            message: error.message
+        });
     }
-}
+};
 
 
 export const completeCapture = async(req,res) =>{

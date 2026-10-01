@@ -8,7 +8,7 @@ const openingBalanceSchema = new mongoose.Schema({
     },
     balanceType : {
         type : String,
-        enum : ["cash_in_hand","cash_in_bank","loan_to_others","loan_given"],
+        enum : ["cash_in_hand","cash_in_bank","loan_to_other","loan_given"],
         required : true
     },
     targetMonth : {

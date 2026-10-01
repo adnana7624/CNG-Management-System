@@ -139,7 +139,7 @@ export const updateDieselExpense = async (req, res) => {
                 remarks,
             },
             {
-                new: true,
+                returnDocument : "after",
                 runValidators: true,
             }
         );
