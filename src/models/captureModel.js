@@ -35,6 +35,16 @@ const captureSchema = new mongoose.Schema({
         ref : "Admin",
         required : true
     },
+    adminName :{
+        type : String,
+        trim : true,
+        default : ""
+    },
+    pumpName : {
+        type : String,
+        trim : true,
+        default : ""
+    },
     captureType : {
         type : String,
         enum : ["meter", "nozzle"],
