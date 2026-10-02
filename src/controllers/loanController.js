@@ -79,7 +79,7 @@ export const getAllLoans = async(req , res) => {
         // this mont loan
         const thisMonthLoan = loans.reduce((total , loan) =>{
             if(loan.loanType === "loan_given" && loan.date >= startDate && loan.date < endtDate){
-                return total+loan.amount
+                return total+Number(loan.amount ||0);
             }
             return total;
         },0
@@ -88,22 +88,29 @@ export const getAllLoans = async(req , res) => {
     // total loan given
 
     const totalLoanGiven = loans.reduce((total,loan) =>{
-        if(loan.loanType === "loan_given"){
-            return total+loan.remainingBalance;
+        if(loan.loanType === "loan_given" && loan.status=== "active"){
+            return total+Number(loan.remainingBalance || 0);
         }
         return total;
     },0
     )
 
     // this month loan received
-    let thisMonthLoanReceived = 0;
-    loans.forEach((loan) =>{
-        // new loan received 
-        if(loan.loanType === "loan_received" && loan.date>=startDate && loan.date < endtDate ){
-            thisMonthLoanReceived += loan.amount
-        }
-    })
+    // let thisMonthLoanReceived = 0;
+    // loans.forEach((loan) =>{
+    //     // new loan received 
+    //     if(loan.loanType === "loan_received" && loan.date>=startDate && loan.date < endtDate && loan.status === "active" ){
+    //         thisMonthLoanReceived += loan.amount
+    //     }
+    // })
 
+    const thisMonthLoanReceived = loans.reduce((total,loan) =>{
+        if(loan.loanType === "loan_received" && loan.date>=startDate && loan.date < endtDate && loan.status === "active" ){
+            return total+Number(loan.remainingBalance || 0);
+        }
+        return total;
+    },0
+    )
     // active loan staff 
     const activeLoanNames = new Set();
     loans.forEach((loan) =>{

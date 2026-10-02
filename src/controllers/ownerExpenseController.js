@@ -1,5 +1,57 @@
 import mongoose from "mongoose";
 import { OwnerExpense } from "../models/ownerExpenseModel.js";
+import {Owner} from "../models/ownerModel.js";
+
+// const addOwner 
+export const addOwner = async(req , res)=>{
+    try {
+        const adminId = req.user.id;
+
+        const {ownerName} = req.body;
+
+        if(!ownerName){
+            return res.status(400).json({message : "onwername required"})
+        }
+
+        const owner = await Owner.create({
+            admin : adminId,
+            ownerName
+        });
+
+        return res.status(201).json({
+            success : true,
+            message : "owner added succwsfuly"
+        })
+
+
+
+    } catch (error) {
+        return res.status(500).json({
+            success : false,
+            message : error.message
+        })
+    }
+}
+
+export const getOwner = async(req , res)=>{
+    try {
+        const adminId = req.user.id;
+
+        const owner = await Owner.find({admin : adminId});
+
+        return res.status(200).json({
+            success : true,
+            owner
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            success : false,
+            message : error.message
+        })
+    }
+}
+
 
 // Create Owner Expense
 export const createOwnerExpense = async (req, res) => {
@@ -178,3 +230,74 @@ export const deleteOwnerExpense = async (req, res) => {
         });
     }
 };
+
+// get all owner details
+export const getOwnerDatails = async(req , res ) => {
+    try {
+        const {OwnerId} = req.params
+        const adminId = req.user.id;
+
+        // get all epxense
+        const ownerExpenses = await OwnerExpense.find({
+            admin : adminId,
+            owner : OwnerId
+        }).populate("owner").sort({createdAt : -1});
+
+        if(ownerExpenses.length === 0){
+            return res.status(400).json({message : "no record for this owner"})
+        }
+
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(),now.getMonth(),1);
+        const endOfMonth = new Date(now.getFullYear(),now.getMonth()+1,1);
+
+
+        const totalExpensesToDate = ownerExpenses.reduce(
+            (total,expense) => total+ Number(expense.amount),0
+        );
+
+        const currentMonthExpenses = ownerExpenses.filter((expense) => {
+            const expenseDate = new Date(expense.date);
+            
+            return(
+                expenseDate >= startOfMonth &&
+                expenseDate < endOfMonth
+            )
+        }).reduce(
+            (total , expense) => total + Number(expense.amount),0
+        );
+
+        const recentTransactions = ownerExpenses.slice(0,10).map((expense) => ({
+            _id : expense._id,
+            date : expense.date,
+            category : expense.category,
+            status : expense.status,
+            descriptions : expense.remarks,
+            paymentMode : expense.paymentMode,
+            amount : expense.amount
+        }))
+
+        const owner = ownerExpenses[0].owner;
+        
+        return res.status(200).json({
+            success : true,
+
+            owner : {
+                _id : owner._id,
+                name : owner.name,
+                role : owner.role
+            },
+            summary :{
+                totalExpensesToDate,
+                currentMonthExpenses
+            },
+            recentTransactions
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            success : false,
+            message : error.message
+        })
+    }
+}

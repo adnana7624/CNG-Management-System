@@ -1,4 +1,4 @@
-import {  completeCapture, getCaptureHistory, uploadCaptureImage } from "../controllers/captureController.js";
+import {  completeCapture, getAllCaptureHistory, getCaptureHistory, uploadCaptureImage } from "../controllers/captureController.js";
 import { auth } from "../middleware/authMiddleware.js";
 import {upload} from "../middleware/multerMiddleware.js";
 import express from "express";
@@ -14,6 +14,8 @@ captureRoutes.post("/complete/:captureId",auth,completeCapture);
 // get capture history
 captureRoutes.get("/history",auth , getCaptureHistory);
 
+// get capture history
+captureRoutes.get("/getAllCaptureHistory",auth,getAllCaptureHistory);
 
 export default captureRoutes;
 

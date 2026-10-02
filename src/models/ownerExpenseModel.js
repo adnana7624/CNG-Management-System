@@ -22,7 +22,7 @@ const ownerExpenseSchema = new mongoose.Schema(
 
         owner: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Admin",
+            ref: "Owner",
             required: true,
         },
 

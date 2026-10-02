@@ -13,9 +13,9 @@ const router = express.Router();
 
 router.post("/create", auth, createExpenseCategory);
 
-router.get("/get", auth, getExpenseCategories);
+router.get("/get", getExpenseCategories);
 
-router.put("/:id", auth, updateExpenseCategory);
+router.put("/:id", updateExpenseCategory);
 
 router.delete("/:id", auth, deleteExpenseCategory);
 

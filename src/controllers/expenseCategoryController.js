@@ -63,13 +63,14 @@ export const createExpenseCategory = async (req, res) => {
 // Get All Expense Categories
 export const getExpenseCategories = async (req, res) => {
     try {
-        const adminId = req.user.id;
+        // const adminId = req.user.id;
 
-        const expenseCategories = await ExpenseCategory.find({
-            admin: adminId,
-        }).sort({
-            createdAt: -1,
-        });
+        // const expenseCategories = await ExpenseCategory.find({
+        //     admin: adminId,
+        // }).sort({
+        //     createdAt: -1,
+        // });
+        const expenseCategories = await ExpenseCategory.find();
 
         return res.status(200).json({
             success: true,

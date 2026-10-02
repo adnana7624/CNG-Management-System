@@ -57,7 +57,7 @@ export const getLedger = async(req , res) => {
                 details : sale.notes || "CNG Sale",
                 amount : sale.amount,
                 paymentPool : sale.paymentMethod === "cash"?"Cash Acount Head Pool":"Bank Acount Reserve Pool",
-                volume : sale.volume,
+                volume : sale.cngVolume,
                 status : sale.status
             });
         });

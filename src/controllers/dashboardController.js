@@ -234,7 +234,7 @@ export const getDashboard = async (req , res) =>{
                 id : expense._id,
                 date : expense.date,
                 type : "Expense Recovery",
-                details : expense.category.name || expense.remarks || "Recovered Expense",
+                details : expense.category?.name || expense.remarks || "Recovered Expense",
                 amount : expense.recoveryAmount ,
                 pool : expense.paymentMode,
                 status : expense.status || "Completed"
@@ -321,7 +321,7 @@ export const getDashboard = async (req , res) =>{
         );
 
         // show only latest 5
-        const latestTransactions = recentTransactions.slice(0,5);
+        const latestTransactions = recentTransactions.slice();
 
 
         return res.status(200).json({
