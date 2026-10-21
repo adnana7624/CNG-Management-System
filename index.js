@@ -23,6 +23,8 @@ import ownerExpenseRoutes from "./src/routes/ownerExpenseRoutes.js";
 import dashboardRoutes from "./src/routes/dashBoardRoutes.js";
 import captureRoutes from "./src/routes/captureRoutes.js";
 
+import workingPeriodRoutes from "./src/routes/workingPerioidRoutes.js";
+
 
 const app = express();
 
@@ -52,15 +54,15 @@ app.use("/api/v1/ledger",ledgerRoutes);
 app.use("/api/v1/dashboard",dashboardRoutes);
 app.use("/api/v1/capture",captureRoutes);
 
-app.get("/",(req ,res)=>{
-    // console.log("app runnig succesfuly")
-    return res.status(200).json({message : "backend runing on succesfuly"})
+app.use("/api/v1/working-period", workingPeriodRoutes);
 
+app.get("/",()=>{
+    console.log("app runnig succesfuly")
 })
 
 connectDB();
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 
 
 app.listen(port , "0.0.0.0", ()=>{

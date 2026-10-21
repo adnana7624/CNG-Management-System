@@ -63,7 +63,6 @@ export const createOwnerExpense = async (req, res) => {
             amount,
             paymentMode,
             owner,
-            status,
             remarks,
         } = req.body;
 
@@ -80,7 +79,6 @@ export const createOwnerExpense = async (req, res) => {
             amount,
             paymentMode,
             owner,
-            status,
             remarks,
         });
 
@@ -142,7 +140,6 @@ export const updateOwnerExpense = async (req, res) => {
             amount,
             paymentMode,
             owner,
-            status,
             remarks,
         } = req.body;
 
@@ -163,7 +160,7 @@ export const updateOwnerExpense = async (req, res) => {
                 amount,
                 paymentMode,
                 owner,
-                status,
+                
                 remarks,
             },
             {
@@ -271,7 +268,6 @@ export const getOwnerDatails = async(req , res ) => {
             _id : expense._id,
             date : expense.date,
             category : expense.category,
-            status : expense.status,
             descriptions : expense.remarks,
             paymentMode : expense.paymentMode,
             amount : expense.amount
@@ -301,3 +297,4 @@ export const getOwnerDatails = async(req , res ) => {
         })
     }
 }
+
