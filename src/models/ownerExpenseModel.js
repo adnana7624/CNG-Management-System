@@ -26,12 +26,6 @@ const ownerExpenseSchema = new mongoose.Schema(
             required: true,
         },
 
-        status: {
-            type: String,
-            enum: ["Paid", "Pending"],
-            default: "Paid",
-        },
-
         remarks: {
             type: String,
             trim: true,
@@ -53,3 +47,5 @@ export const OwnerExpense = mongoose.model(
     "OwnerExpense",
     ownerExpenseSchema
 ); 
+
+

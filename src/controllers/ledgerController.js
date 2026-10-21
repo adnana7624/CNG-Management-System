@@ -127,37 +127,81 @@ export const getLedger = async(req , res) => {
         });
 
         // Loans
-        loans.forEach((loan) =>{
-            ledger.push({
-                id : `${loan._id}-original`,
-                source : "loan",
-                date : loan.date,
-                type : "Loan",
-                specificHead : loan.loanType === "loan_given"?"loan_given":"Loan Recieved",
-                details : loan.remarks || loan.name,
-                amount : loan.amount,
-                paymentPool : loan.paymentType,
-                volume : null,
-                status : loan.status
-            })
+        // loans.forEach((loan) =>{
+        //     ledger.push({
+        //         id : `${loan._id}-original`,
+        //         source : "loan",
+        //         date : loan.date,
+        //         type : "Loan",
+        //         specificHead : loan.loanType === "loan_given"?"loan_given":"Loan Recieved",
+        //         details : loan.remarks || loan.name,
+        //         amount : loan.amount,
+        //         paymentPool : loan.paymentType,
+        //         volume : null,
+        //         status : loan.status
+        //     })
 
-            // loan update transaction
-            if(loan.transactions && loan.transactions.length > 0){
-                loan.transactions.forEach((transaction , index) => {
-                    ledger.push({
-                        id : `${loan._id}-transaction-${index}`,
-                        source : "loan",
-                        date : transaction.date,
-                        type : "Loan",
-                        specificHead : transaction.loanType === "loan_given"?"Loan Given" : "Loan Received",
-                        details:transaction.remarks || loan.name,
-                        amount : transaction.amount,
-                        paymentPool : transaction.paymentType,
-                        volume : null,
-                        status : loan.status
-                    })
-                });
-                }
+        //     // loan update transaction
+        //     if(loan.transactions && loan.transactions.length > 0){
+        //         loan.transactions.forEach((transaction , index) => {
+        //             ledger.push({
+        //                 id : `${loan._id}-transaction-${index}`,
+        //                 source : "loan",
+        //                 date : transaction.date,
+        //                 type : "Loan",
+        //                 specificHead : transaction.loanType === "loan_given"?"Loan Given" : "Loan Received",
+        //                 details:transaction.remarks || loan.name,
+        //                 amount : transaction.amount,
+        //                 paymentPool : transaction.paymentType,
+        //                 volume : null,
+        //                 status : loan.status
+        //             })
+        //         });
+        //         }
+        // });
+
+        // Loans
+        loans.forEach((loan) => {
+
+            let specificHead = "";
+            let details = "";
+
+            // Original Loan Given
+            if (loan.loanType === "loan_given") {
+                specificHead = "Loan Given";
+                details = loan.name;
+            }
+
+            // Original Loan Received
+            else if (loan.loanType === "loan_received") {
+                specificHead = "Loan Received";
+                details = loan.name;
+            }
+
+            // Money recovered from someone who had received money from pump
+            else if (loan.loanType === "loan_recovery") {
+                specificHead = "Loan Recovery";
+                details = loan.name;
+            }
+
+            // Money returned to someone from whom pump had received loan
+            else if (loan.loanType === "loan_return") {
+                specificHead = "Loan Return";
+                details = loan.name;
+            }
+
+            ledger.push({
+                id: loan._id,
+                source: "loan",
+                date: loan.date,
+                type: "Loan",
+                specificHead,
+                details,
+                amount: loan.amount,
+                paymentPool: loan.paymentType,
+                volume: null,
+                status: loan.status
+            });
         });
             // CashBank Transfer
         cashBankTransfers.forEach((transfer) =>{
@@ -176,7 +220,7 @@ export const getLedger = async(req , res) => {
             })
         })
 
-        //sort by date 
+        //sort by date
         ledger.sort((a,b) =>{
             const dateDifference = new Date(b.date) - new Date(a.date);
             if(dateDifference !==0){
@@ -184,7 +228,7 @@ export const getLedger = async(req , res) => {
                 }
                 return 0;
         })
-        // count 
+        // count
         const total = ledger.length;
 
         const totalPages = Math.ceil(total/limit);
